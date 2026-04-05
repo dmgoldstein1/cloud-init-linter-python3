@@ -140,7 +140,8 @@ def main() -> int:
 
     had_errors = 0
     for config_file in config_files:
-        had_errors |= validate_file(config_file)
+        if validate_file(config_file):
+            had_errors = 1
     return had_errors
 
 
