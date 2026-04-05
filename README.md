@@ -21,7 +21,7 @@ jobs:
 
 This is a list of the arguments this action can take:
 
-| Name  | Required | Description        | Default                      |
-|-------|----------|--------------------|------------------------------|
-| files | No       | What files to lint | `**/*cloud-init*.{yml,yaml}` |
-| ignore | No      | Files or directories to ignore | |
+| Name   | Required | Description                     | Default                      |
+|--------|----------|---------------------------------|------------------------------|
+| files  | No       | What files to lint              | `**/*cloud-init*.{yml,yaml}` |
+| ignore | No       | Files or directories to ignore  | `-`                          |

@@ -68,7 +68,7 @@ def expand_braces(pattern: str) -> list[str]:
 
     expanded_patterns = []
     prefix = pattern[:start]
-    suffix = pattern[end + 1 :]
+    suffix = pattern[end + 1:]
     for option in options:
         expanded_patterns.extend(expand_braces(f"{prefix}{option}{suffix}"))
     return expanded_patterns
@@ -89,10 +89,11 @@ def should_ignore(path: str, ignore_patterns: list[str]) -> bool:
     path_obj = Path(path)
     for pattern in ignore_patterns:
         for expanded_pattern in expand_braces(pattern):
-            if fnmatch.fnmatch(posix_path, expanded_pattern):
+            normalized_pattern = expanded_pattern.rstrip("/") or expanded_pattern
+            if fnmatch.fnmatch(posix_path, normalized_pattern):
                 return True
             for parent in path_obj.parents:
-                if fnmatch.fnmatch(parent.as_posix(), expanded_pattern):
+                if fnmatch.fnmatch(parent.as_posix(), normalized_pattern):
                     return True
     return False
 
@@ -116,6 +117,30 @@ def validate_file(config_file: str) -> int:
         text=True,
         check=False,
     )
+    if (
+        result.returncode != 0
+        and "schema" in "\n".join(
+            part for part in (result.stdout.strip(), result.stderr.strip()) if part
+        ).lower()
+        and any(
+            marker in "\n".join(
+                part for part in (result.stdout.strip(), result.stderr.strip()) if part
+            ).lower()
+            for marker in (
+                "invalid choice",
+                "unrecognized arguments",
+                "unknown command",
+                "too few arguments",
+                "usage: cloud-init",
+            )
+        )
+    ):
+        result = subprocess.run(
+            ["cloud-init", "devel", "schema", "--config-file", config_file],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
     output = "\n".join(part for part in (result.stdout.strip(), result.stderr.strip()) if part)
     if result.returncode == 0:
         print(f"{config_file} was valid")
