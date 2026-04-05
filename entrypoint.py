@@ -14,10 +14,21 @@ def split_input_patterns(value: str | None, default: str = "") -> list[str]:
     raw_value = value if value and value.strip() else default
     patterns = []
     for line in raw_value.splitlines():
-        for part in line.split(","):
-            pattern = part.strip()
-            if pattern:
-                patterns.append(pattern)
+        segment_start = 0
+        depth = 0
+        for index, char in enumerate(line):
+            if char == "{":
+                depth += 1
+            elif char == "}":
+                depth = max(0, depth - 1)
+            elif char == "," and depth == 0:
+                pattern = line[segment_start:index].strip()
+                if pattern:
+                    patterns.append(pattern)
+                segment_start = index + 1
+        pattern = line[segment_start:].strip()
+        if pattern:
+            patterns.append(pattern)
     return patterns
 
 
@@ -100,7 +111,7 @@ def escape_property_value(value: str) -> str:
 
 def validate_file(config_file: str) -> int:
     result = subprocess.run(
-        ["cloud-init", "devel", "schema", "--config-file", config_file],
+        ["cloud-init", "schema", "--config-file", config_file],
         capture_output=True,
         text=True,
         check=False,
